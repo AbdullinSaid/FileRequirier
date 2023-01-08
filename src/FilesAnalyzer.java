@@ -20,8 +20,8 @@ public class FilesAnalyzer {
     }
 
     /**
-     * Add file to graph
-     * @param path path to file
+     * Recursive adding files to graph
+     * @param path path to node
      */
     public void recursiveBuild(String path) {
         File dir = new File(path);

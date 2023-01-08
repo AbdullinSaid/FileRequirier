@@ -5,7 +5,11 @@ public class Main {
         Scanner scanner = new Scanner(System.in);
         String path = scanner.nextLine();
         FilesAnalyzer filesAnalyzer = new FilesAnalyzer();
-        filesAnalyzer.recursiveBuild(path);
-        GraphOperations.printByTopologicalSorted(filesAnalyzer.getValues());
+        try {
+            filesAnalyzer.recursiveBuild(path);
+            GraphOperations.printByTopologicalSorted(filesAnalyzer.getValues());
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        }
     }
 }
