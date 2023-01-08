@@ -6,6 +6,6 @@ public class Main {
         String path = scanner.nextLine();
         FilesAnalyzer filesAnalyzer = new FilesAnalyzer();
         filesAnalyzer.recursiveBuild(path);
-        GraphOperations.printByTopologicalSorted(filesAnalyzer.graphNodeMap.values());
+        GraphOperations.printByTopologicalSorted(filesAnalyzer.getValues());
     }
 }

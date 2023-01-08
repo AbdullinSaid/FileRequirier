@@ -3,21 +3,30 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Pattern;
 
+/**
+ * Class for analyzing files and building graph by them
+ */
 public class FilesAnalyzer {
-    HashMap<String, FileGraphNode> graphNodeMap;
+    private final Map<String, FileGraphNode> graphNodeMap;
 
     public FilesAnalyzer() {
-        graphNodeMap = new HashMap<>();
+        this.graphNodeMap = new HashMap<>();
     }
 
+    /**
+     * Add file to graph
+     * @param path path to file
+     */
     public void recursiveBuild(String path) {
         File dir = new File(path);
         if (!dir.exists()) {
-            System.out.println("Incorrect path " + dir.getPath());
-            return;
+            throw new RuntimeException("Incorrect path " + dir.getPath());
         }
         if (dir.isFile()) {
             FileGraphNode node;
@@ -35,8 +44,12 @@ public class FilesAnalyzer {
         }
     }
 
-    public void analyzeFile(FileGraphNode node) {
-        try (BufferedReader br = new BufferedReader(new FileReader(node.filePath.toFile()))) {
+    /**
+     * Analyze file content and adding new edges to graph
+     * @param node graph node to analyze
+     */
+    private void analyzeFile(FileGraphNode node) {
+        try (BufferedReader br = new BufferedReader(new FileReader(node.getFilePath().toFile()))) {
             String line;
             while ((line = br.readLine()) != null) {
                 if (Pattern.matches("require '.+'", line)) {
@@ -45,13 +58,16 @@ public class FilesAnalyzer {
                         if (!graphNodeMap.containsKey(parentPath)) {
                             graphNodeMap.put(parentPath, new FileGraphNode(parentPath));
                         }
-                        graphNodeMap.get(parentPath).childrenList.add(node);
+                        graphNodeMap.get(parentPath).getChildrenList().add(node);
                     }
                 }
             }
         } catch (IOException ex) {
-            System.out.println("Exception occurred while reading file " + ex.getMessage());
+            throw new RuntimeException("Exception occurred while reading file {}", ex);
         }
     }
 
+    public Collection<FileGraphNode> getValues() {
+        return graphNodeMap.values();
+    }
 }

@@ -1,37 +1,81 @@
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
+/**
+ * Class with operations for graphs
+ */
 public class GraphOperations {
-    private static HashMap<FileGraphNode, FileGraphNode> parent;
-    private static FileGraphNode cycleStart, cycleEnd;
+    private final static Map<FileGraphNode, FileGraphNode> parent;
+    static {
+        parent = new HashMap<>();
+    }
+    private static FileGraphNode cycleStart;
+    private static FileGraphNode cycleEnd;
 
+    /**
+     * DFS algorithm that checks for cycles in a graph
+     * @param node graph node
+     * @return is there a cycle
+     */
     private static boolean dfsCheckCycles(FileGraphNode node) {
-        node.used = 1;
-        for (FileGraphNode to : node.childrenList) {
-            if (to.filePath.toFile().exists()) {
-                if (to.used == 1) {
+        node.setUsed(1);
+        for (FileGraphNode to : node.getChildrenList()) {
+            if (to.getFilePath().toFile().exists()) {
+                if (to.usedEquals(1)) {
                     cycleEnd = node;
                     cycleStart = to;
                     return true;
-                } else if (to.used == 0) {
-                    parent.put(node, to);
-                    return dfsCheckCycles(to);
+                } else {
+                    if (to.usedEquals(0)) {
+                        parent.put(node, to);
+                        return dfsCheckCycles(to);
+                    }
                 }
             }
         }
-        node.used = 2;
+        node.setUsed(2);
         return false;
     }
 
-    public static boolean checkCycles(Collection<FileGraphNode> graph) {
-        for (FileGraphNode node : graph) {
-            node.used = 0;
+    /**
+     * Topological Sort algorithm
+     * @param node graph node
+     * @param answer list of Topological sorted graph
+     */
+    private static void dfsTopologicalSort(FileGraphNode node, List<FileGraphNode> answer) {
+        node.setUsed(1);
+        for (FileGraphNode to : node.getChildrenList()) {
+            if (to.usedEquals(0)) {
+                dfsTopologicalSort(to, answer);
+            }
         }
-        parent = new HashMap<>();
+        answer.add(node);
+    }
+
+    private static void init(Collection<FileGraphNode> graph) {
+        for (FileGraphNode node : graph) {
+            node.setUsed(0);
+        }
+        parent.clear();
         cycleStart = null;
         cycleEnd = null;
+    }
+
+    /**
+     * Check cycles in graph and print one found if found
+     * @param graph graph
+     * @return is there a cycle
+     */
+    public static boolean checkCycles(Collection<FileGraphNode> graph) {
+        init(graph);
+
         for (FileGraphNode node : graph) {
             if (dfsCheckCycles(node)) {
                 break;
@@ -42,49 +86,42 @@ public class GraphOperations {
             return false;
         } else {
             System.out.println("Found cycle:");
-            System.out.print(cycleStart.filePath + " ");
+            System.out.print(cycleStart.getFilePath() + " ");
             while (cycleStart != cycleEnd) {
                 cycleStart = parent.get(cycleStart);
-                System.out.print(cycleStart.filePath + " ");
+                System.out.print(cycleStart.getFilePath() + " ");
             }
             System.out.println();
             return true;
         }
     }
 
-    private static void dfsTopologicalSort(FileGraphNode node, List<FileGraphNode> answer) {
-        node.used = 1;
-        for (FileGraphNode to : node.childrenList) {
-            if (to.used == 0) {
-                dfsTopologicalSort(to, answer);
-            }
-        }
-        answer.add(node);
-    }
-
+    /**
+     * Topological Sort and printing file graph by it
+     * @param graph graph
+     */
     public static void printByTopologicalSorted(Collection<FileGraphNode> graph) {
         if (checkCycles(graph)) {
             return;
         }
         for (FileGraphNode node : graph) {
-            node.used = 0;
+            node.setUsed(0);
         }
         List<FileGraphNode> answer = new ArrayList<>();
         for (FileGraphNode node : graph) {
-            if (node.used == 0) {
+            if (node.usedEquals(0)) {
                 dfsTopologicalSort(node, answer);
             }
         }
         Collections.reverse(answer);
         for (FileGraphNode node : answer) {
-            try (BufferedReader br = new BufferedReader(new FileReader(node.filePath.toFile()))) {
+            try (BufferedReader br = new BufferedReader(new FileReader(node.getFilePath().toFile()))) {
                 String line;
                 while ((line = br.readLine()) != null) {
                     System.out.println(line);
                 }
             } catch (IOException ex) {
-                System.out.println("Exception occurred while printing file " + ex.getMessage());
-                break;
+                throw new RuntimeException("Exception occurred while printing file {}", ex);
             }
         }
     }
